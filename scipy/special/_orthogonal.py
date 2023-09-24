@@ -178,10 +178,16 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     c[1,:] = an_func(k)
     x = linalg.eigvals_banded(c, overwrite_a_band=True)
 
-    # improve roots by one application of Newton's method
-    y = f(n, x)
-    dy = df(n, x)
-    x -= y/dy
+    # improve roots by application of Newton's method
+    for iiter in range(100):
+        y = f(n, x)
+        dy = df(n, x)
+        dx = -y/dy
+        x += dx
+        if np.max(np.abs(dx)) <= 10*np.finfo(x.dtype).eps:
+            break
+    else:
+        raise RuntimeError("Newton's method failed to converge for roots of orthogonal polynomial")
 
     # fm and dy may contain very large/small values, so we
     # log-normalize them to maintain precision in the product fm*dy
